@@ -1,4 +1,4 @@
-﻿namespace MazeGame.Forms
+﻿namespace BlueMonster.MazeGame
 {
 	partial class FormMaze
 	{

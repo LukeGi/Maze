@@ -4,8 +4,9 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using BlueMonster.Utilities;
 
-namespace MazeGame.Forms
+namespace BlueMonster.MazeGame
 {
 	#region FullGame Form (Fully Painted)
 	public partial class FormMaze : Form
@@ -13,9 +14,13 @@ namespace MazeGame.Forms
 
 		#region ----- Variable Feilds -----
 
+		private bool paused;
 		private FormPage CurrentPage;
+		private PageMainMenu pageMainMenu;
+		private PageMazeCreator pageMazeCreator;
+		private Bitmap blur;
 
-		internal static string title = "Blue's Maze Game";
+		public string title = "Blue's Maze Game";
 
 		#endregion
 
@@ -23,11 +28,68 @@ namespace MazeGame.Forms
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
-			CurrentPage.PaintPage(e.Graphics);
-			base.OnPaint(e);
+			switch (paused)
+			{
+				case true:
+					switch (blur)
+					{
+						case null:
+							blur = new Bitmap(ClientSize.Width, ClientSize.Height, PixelFormat.Format32bppArgb);
+							using (Graphics g = Graphics.FromImage(blur))
+								CurrentPage.PaintPage(g);
+							CurrentPage.DeleteCache();
+							BitmapFilter.GaussianBlur(blur, 4);
+							Invalidate();
+							break;
+						default:
+							e.Graphics.DrawImage(blur, 0, 0);
+							break;
+					}
+					break;
+				case false:
+					CurrentPage.PaintPage(e.Graphics);
+					base.OnPaint(e);
+					break;
+			}
 		}
 
 		#endregion
+
+		public void ChangeToPage(Page page)
+		{
+			switch (CurrentPage)
+			{
+				case null:
+					break;
+				default:
+					CurrentPage.DeleteCache();
+					break;
+			}
+			switch (page)
+			{
+				case Page.None:
+					CurrentPage.Dispose();
+					CurrentPage = null;
+					pageMainMenu.Dispose();
+					pageMazeCreator.Dispose();
+					this.Close();
+					break;
+				case Page.MainMenu:
+					CurrentPage = pageMainMenu;
+					break;
+				case Page.MazeCreator:
+					CurrentPage = pageMazeCreator;
+					break;
+			}
+			switch (CurrentPage)
+			{
+				case null:
+					break;
+				default:
+					CurrentPage.PageSize = ClientSize;
+					break;
+			}
+		}
 
 		#region ----- Constructor -----
 
@@ -43,10 +105,15 @@ namespace MazeGame.Forms
 				ControlStyles.EnableNotifyMessage,
 				true);
 
+			pageMainMenu = new PageMainMenu(this, ClientSize);
+			pageMazeCreator = new PageMazeCreator(this, ClientSize);
+
 			Disposed += EventDisposed;
 			Load += EventFormLoad;
+			Resize += EventResize;
 			MouseMove += EventMouseMoved;
 			MouseClick += EventMouseClick;
+			KeyDown += EventKeyDown;
 		}
 
 		#endregion
@@ -55,24 +122,42 @@ namespace MazeGame.Forms
 
 		private void EventDisposed(object sender, EventArgs e)
 		{
-			DeleteCache();
 			PageStyle.Dispose();
 		}
 
 		private void EventFormLoad(object sender, EventArgs e)
 		{
-			// FIXME: Change this to use the state machine when it is implemented.
-			CurrentPage = new PageMainMenu(this, ClientSize);
+			ChangeToPage(Page.MainMenu);
 		}
 
 		private void EventMouseMoved(object sender, MouseEventArgs e)
 		{
-			CurrentPage.HandleMouseMove(e.Location);
+			if (!paused)
+				CurrentPage.HandleMouseMove(e.Location);
 		}
 
 		private void EventMouseClick(object sender, MouseEventArgs e)
 		{
-			CurrentPage.HandleMouseClick(e.Button);
+			if (!paused)
+				CurrentPage.HandleMouseClick(e.Button);
+		}
+
+		private void EventResize(object sender, EventArgs e)
+		{
+			CurrentPage.PageSize = ClientSize;
+			CurrentPage.DeleteCache();
+		}
+
+		private void EventKeyDown(object sender, KeyEventArgs e)
+		{
+			switch (e.KeyCode)
+			{
+				case Keys.Escape:
+					paused = !paused;
+					DeleteBlur();
+					Invalidate();
+					break;
+			}
 		}
 
 		#endregion
@@ -83,6 +168,15 @@ namespace MazeGame.Forms
 		{
 			CurrentPage.DeleteCache();
 			Invalidate();
+		}
+
+		private void DeleteBlur()
+		{
+			if (blur != null)
+			{
+				blur.Dispose();
+				blur = null;
+			}
 		}
 
 		#endregion
@@ -222,7 +316,7 @@ namespace MazeGame.Forms
 		#region ----- Private Feilds -----
 
 		private Page page;
-		private Form parent;
+		private FormMaze parent;
 		private Size pageSize;
 		private GameButton[] buttons;
 		protected Bitmap bgImage;
@@ -235,7 +329,7 @@ namespace MazeGame.Forms
 		public Page Page { get => page; set => page = value; }
 		public GameButton[] Buttons { get => buttons; set => buttons = value; }
 		public Size PageSize { get => pageSize; set => pageSize = value; }
-		public Form Parent { get => parent; set => parent = value; }
+		public FormMaze Parent { get => parent; set => parent = value; }
 
 		#endregion
 
@@ -243,7 +337,7 @@ namespace MazeGame.Forms
 
 		#region ----- Constructor -----
 
-		public FormPage(Form parent, Page p, Size size)
+		public FormPage(FormMaze parent, Page p, Size size)
 		{
 			Page = p;
 			Buttons = GetButtons();
@@ -266,7 +360,7 @@ namespace MazeGame.Forms
 		#region ----- Helper Draw Methods -----
 
 		internal void DrawButton(Graphics g, Font f, Brush backColour, Brush textColor,
-			Pen borderColour, ref String btnText, ref Rectangle background)
+			Pen borderColour, String btnText, ref Rectangle background)
 		{
 #if SHOWBORDERS
 			borderColour = Pens.Black;
@@ -356,7 +450,7 @@ namespace MazeGame.Forms
 	{
 		enum MainMenuButtons { None, SinglePlayer, Multiplayer, Settings, Exit }
 
-		public PageMainMenu(Form form, Size size) : base(form, Page.MainMenu, size)
+		public PageMainMenu(FormMaze form, Size size) : base(form, Page.MainMenu, size)
 		{
 		}
 
@@ -397,53 +491,55 @@ namespace MazeGame.Forms
 
 		internal override void GenerateBGImage()
 		{
-			if (bgImage == null)
+			switch (bgImage)
 			{
-				bgImage = new Bitmap(PageSize.Width, PageSize.Height, PixelFormat.Format32bppArgb);
-				using (Graphics g = Graphics.FromImage(bgImage))
-				{
-					int q = PageSize.Width / 4;
-					g.FillRectangle(PageStyle.BGColor, q + 10, 0, PageSize.Width - q - 10, PageSize.Width);
-					g.FillRectangle(PageStyle.FGColor, 0, 0, q, PageSize.Height);
-					g.FillRectangle(Brushes.Black, q, 0, 10, PageSize.Width);
-				}
-			}
-			else
-			{
-				DeleteBGImageCache();
-				GenerateBGImage();
+				case null:
+					bgImage = new Bitmap(PageSize.Width, PageSize.Height, PixelFormat.Format32bppArgb);
+					using (Graphics g = Graphics.FromImage(bgImage))
+					{
+						int q = PageSize.Width / 4;
+						g.FillRectangle(PageStyle.BGColor, q + 10, 0, PageSize.Width - q - 10, PageSize.Width);
+						g.FillRectangle(PageStyle.FGColor, 0, 0, q, PageSize.Height);
+						g.FillRectangle(Brushes.Black, q, 0, 10, PageSize.Width);
+					}
+					break;
+				default:
+					DeleteBGImageCache();
+					GenerateBGImage();
+					break;
 			}
 		}
 
 		internal override void GenerateFGImage()
 		{
-			if (fgImage == null)
+			switch (fgImage)
 			{
-				fgImage = new Bitmap(PageSize.Width, PageSize.Height, PixelFormat.Format32bppArgb);
-				using (Graphics g = Graphics.FromImage(fgImage))
-				{
-					g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-					g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-
-					int buttonWidth = (PageSize.Width / 4) - 20;
-					int buttonHeight = 50;
-					int listTop = (PageSize.Height - (buttonHeight * Buttons.Length) - ((Buttons.Length - 1) * 15)) / 2;
-					for (int i = 0; i < Buttons.Length; i++)
+				case null:
+					fgImage = new Bitmap(PageSize.Width, PageSize.Height, PixelFormat.Format32bppArgb);
+					using (Graphics g = Graphics.FromImage(fgImage))
 					{
-						Buttons[i].Collider = new Rectangle(10, listTop + (buttonHeight * i) + (15 * i), buttonWidth, buttonHeight);
-						DrawButton(g, PageStyle.ButtonFont,
-							Buttons[i].Selected ? PageStyle.HighlightedColor : PageStyle.FeatureColor,
-							PageStyle.TextColor, PageStyle.BorderColor, ref Buttons[i].ButtonText, ref Buttons[i].Collider);
+						g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+						g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+						int buttonWidth = (PageSize.Width / 4) - 20;
+						int buttonHeight = 50;
+						int listTop = (PageSize.Height - (buttonHeight * Buttons.Length) - ((Buttons.Length - 1) * 15)) / 2;
+						for (int i = 0; i < Buttons.Length; i++)
+						{
+							Buttons[i].Collider = new Rectangle(10, listTop + (buttonHeight * i) + (15 * i), buttonWidth, buttonHeight);
+							DrawButton(g, PageStyle.ButtonFont,
+								Buttons[i].Selected ? PageStyle.HighlightedColor : PageStyle.FeatureColor,
+								PageStyle.TextColor, PageStyle.BorderColor, Buttons[i].ButtonText, ref Buttons[i].Collider);
+						}
+						Rectangle btnSize = Rectangle.FromLTRB((PageSize.Width / 4) + 22, 12,
+							PageSize.Width - 12, 12 + g.MeasureString(Parent.title, PageStyle.TitleFont).ToSize().Height);
+						DrawButton(g, PageStyle.TitleFont, PageStyle.BGColor, Brushes.White, Pens.Transparent, Parent.title, ref btnSize);
 					}
-					Rectangle btnSize = Rectangle.FromLTRB((PageSize.Width / 4) + 22, 12,
-						PageSize.Width - 12, 12 + g.MeasureString(FormMaze.title, PageStyle.TitleFont).ToSize().Height);
-					DrawButton(g, PageStyle.TitleFont, PageStyle.BGColor, Brushes.White, Pens.Transparent, ref FormMaze.title, ref btnSize);
-				}
-			}
-			else
-			{
-				DeleteFGImageCache();
-				GenerateFGImage();
+					break;
+				default:
+					DeleteFGImageCache();
+					GenerateFGImage();
+					break;
 			}
 		}
 
@@ -454,13 +550,14 @@ namespace MazeGame.Forms
 					switch (Buttons[i].Reference)
 					{
 						case (byte)MainMenuButtons.SinglePlayer:
+							Parent.ChangeToPage(Page.MazeCreator);
 							break;
 						case (byte)MainMenuButtons.Multiplayer:
 							break;
 						case (byte)MainMenuButtons.Settings:
 							break;
 						case (byte)MainMenuButtons.Exit:
-							Parent.Close();
+							Parent.ChangeToPage(Page.None);
 							break;
 					}
 		}
@@ -469,6 +566,55 @@ namespace MazeGame.Forms
 	}
 
 	#endregion
+
+	internal class PageMazeCreator : FormPage
+	{
+		public PageMazeCreator(FormMaze parent, Size size) : base(parent, Page.MazeCreator, size)
+		{
+		}
+
+		internal override void GenerateBGImage()
+		{
+			switch (bgImage)
+			{
+				case null:
+					bgImage = new Bitmap(PageSize.Width, PageSize.Height, PixelFormat.Format32bppArgb);
+					using (Graphics g = Graphics.FromImage(bgImage))
+					{
+						g.FillRectangle(PageStyle.BGColor, 0, 0, PageSize.Width, PageSize.Height);
+					}
+					break;
+				default:
+					DeleteBGImageCache();
+					GenerateBGImage();
+					break;
+			}
+		}
+
+		internal override void GenerateFGImage()
+		{
+			switch (fgImage)
+			{
+				case null:
+					fgImage = new Bitmap(PageSize.Width, PageSize.Height, PixelFormat.Format32bppArgb);
+					break;
+				default:
+					DeleteFGImageCache();
+					GenerateFGImage();
+					break;
+			}
+		}
+
+		internal override GameButton[] GetButtons()
+		{
+			return new GameButton[0];
+		}
+
+		internal override void HandleMouseClick(MouseButtons button)
+		{
+			// NOOP
+		}
+	}
 
 	#region Game Button Struct
 	public struct GameButton
