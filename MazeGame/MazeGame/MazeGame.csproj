@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{8E5D0B9F-92E6-4D1D-88D1-17FB3502ECDA}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>MazeGame</RootNamespace>
+    <AssemblyName>MazeGame</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>MazeGame.Program</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>BluesMazeGame.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BlueMonster\MazeGenerators.cs" />
+    <Compile Include="BlueMonster\Utilities\PlayerColours.cs" />
+    <Compile Include="Controls\CircularButton.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\CircularButton.Designer.cs">
+      <DependentUpon>CircularButton.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Components\IDrawable.cs" />
+    <Compile Include="Controls\DisplayMainMenu.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DisplayMainMenu.Designer.cs">
+      <DependentUpon>DisplayMainMenu.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BlueMonster\Utilities\MazeDirection.cs" />
+    <Compile Include="Controls\MazePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MazePanel.Designer.cs">
+      <DependentUpon>MazePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BlueMonster\Utilities\MazeData.cs" />
+    <Compile Include="BlueMonster\Utilities\MazeGeneratorHelper.cs" />
+    <Compile Include="Forms\FullGameForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FullGameForm.Designer.cs">
+      <DependentUpon>FullGameForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FullGamePaint.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FullGamePaint.Designer.cs">
+      <DependentUpon>FullGamePaint.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\MainMenuNew.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\MainMenuNew.Designer.cs">
+      <DependentUpon>MainMenuNew.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\MazeCreator.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\MazeCreator.Designer.cs">
+      <DependentUpon>MazeCreator.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\MazePlayForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\MazePlayForm.Designer.cs">
+      <DependentUpon>MazePlayForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Controls\CircularButton.resx">
+      <DependentUpon>CircularButton.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MazePanel.resx">
+      <DependentUpon>MazePanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FullGameForm.resx">
+      <DependentUpon>FullGameForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FullGamePaint.resx">
+      <DependentUpon>FullGamePaint.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\MainMenuNew.resx">
+      <DependentUpon>MainMenuNew.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\MazeCreator.resx">
+      <DependentUpon>MazeCreator.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\MazePlayForm.resx">
+      <DependentUpon>MazePlayForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="BluesMazeGame.ico" />
+    <Content Include="Textures\bar.png" />
+    <Content Include="Textures\blueball.png" />
+    <Content Include="Textures\Maze Game Game Builder.png" />
+    <Content Include="Textures\Maze Game Main Screen.png" />
+    <Content Include="Textures\Maze.png" />
+    <Content Include="Textures\MazePlayBG.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
