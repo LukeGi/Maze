@@ -111,5 +111,49 @@ namespace BlueMonster.Utilities
 
 			return BitmapFilter.Conv3x3(b, m);
 		}
+
+		public static bool Sharpen(Bitmap b, int nWeight /* default to 11*/)
+		{
+			ConvMatrix m = new ConvMatrix();
+			m.SetAll(0);
+			m.matrix[4] = nWeight;
+			m.matrix[1] = m.matrix[3] = m.matrix[5] = m.matrix[7] = -2;
+			m.Factor = nWeight + -8;
+
+			return BitmapFilter.Conv3x3(b, m);
+		}
+
+		public static bool Smooth(Bitmap b, int nWeight /* default to 1 */)
+		{
+			ConvMatrix m = new ConvMatrix();
+			m.SetAll(1);
+			m.matrix[4] = nWeight;
+			m.Factor = nWeight + 8;
+
+			return BitmapFilter.Conv3x3(b, m);
+		}
+
+		public static bool MeanRemoval(Bitmap b, int nWeight /* default to 9 */)
+		{
+			ConvMatrix m = new ConvMatrix();
+			m.SetAll(-1);
+			m.matrix[4] = nWeight;
+			m.Factor = nWeight - 8;
+
+			return BitmapFilter.Conv3x3(b, m);
+		}
+
+		public static bool EdgeDetect(Bitmap b, int nWeight /* default to 1 */)
+		{
+			ConvMatrix m = new ConvMatrix();
+			m.SetAll(0);
+			m.matrix[0] = 1;	m.matrix[1] = -1;	m.matrix[2] = 1;
+			m.matrix[3] = -1;	m.matrix[4] = 0;	m.matrix[5] = -1;
+			m.matrix[6] = 1;	m.matrix[7] = -1;	m.matrix[8] = 1;
+			m.Factor = 1;
+			m.Offset = 127;
+
+			return BitmapFilter.Conv3x3(b, m);
+		}
 	}
 }

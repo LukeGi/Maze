@@ -1,6 +1,4 @@
-﻿//#define SHOWBORDERS
-
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
@@ -38,7 +36,7 @@ namespace BlueMonster.MazeGame
 							using (Graphics g = Graphics.FromImage(blur))
 								CurrentPage.PaintPage(g);
 							CurrentPage.DeleteCache();
-							BitmapFilter.GaussianBlur(blur, 4);
+							BitmapFilter.EdgeDetect(blur, 9);
 							Invalidate();
 							break;
 						default:
@@ -359,15 +357,21 @@ namespace BlueMonster.MazeGame
 
 		#region ----- Helper Draw Methods -----
 
-		internal void DrawButton(Graphics g, Font f, Brush backColour, Brush textColor,
-			Pen borderColour, String btnText, ref Rectangle background)
+		internal void DrawButton(Graphics g, Font f, ref GameButton button, Brush bgColor, Brush fgColor, Pen borderColour)
 		{
-#if SHOWBORDERS
-			borderColour = Pens.Black;
-#endif
-			g.FillRectangle(backColour, background);
-			g.DrawRectangle(borderColour, background);
-			g.DrawString(btnText, f, textColor, background, PageStyle.stringFormat);
+			DrawTextWithBackground(g, f, button.ButtonText, button.Shape, fgColor, bgColor);
+			g.DrawRectangle(borderColour, button.Shape);
+		}
+
+		internal void DrawTextWithBackground(Graphics g, Font f, string buttonText, Rectangle shape, Brush fgColor, Brush bgColor)
+		{
+			g.FillRectangle(bgColor, shape);
+			DrawText(g, f, buttonText, shape, fgColor);
+		}
+
+		internal void DrawText(Graphics g, Font f, string buttonText, Rectangle shape, Brush fgColor)
+		{
+			g.DrawString(buttonText, f, fgColor, shape, PageStyle.stringFormat);
 		}
 
 		#endregion
@@ -384,9 +388,9 @@ namespace BlueMonster.MazeGame
 		internal virtual void HandleMouseMove(Point location)
 		{
 			for (int i = 0; i < Buttons.Length; i++)
-				if (Buttons[i].Selected != Buttons[i].Collider.Contains(location))
+				if (Buttons[i].Selected != Buttons[i].Shape.Contains(location))
 				{
-					Buttons[i].Selected = Buttons[i].Collider.Contains(location);
+					Buttons[i].Selected = Buttons[i].Shape.Contains(location);
 					DeleteFGImageCache();
 				}
 		}
@@ -463,28 +467,28 @@ namespace BlueMonster.MazeGame
 					Reference = (byte) MainMenuButtons.SinglePlayer,
 					ButtonText = "Single Player",
 					Selected = false,
-					Collider = Rectangle.Empty
+					Shape = Rectangle.Empty
 				},
 				new GameButton()
 				{
 					Reference = (byte) MainMenuButtons.Multiplayer,
 					ButtonText = "Multiplayer",
 					Selected = false,
-					Collider = Rectangle.Empty
+					Shape = Rectangle.Empty
 				},
 				new GameButton()
 				{
 					Reference = (byte) MainMenuButtons.Settings,
 					ButtonText = "Settings",
 					Selected = false,
-					Collider = Rectangle.Empty
+					Shape = Rectangle.Empty
 				},
 				new GameButton()
 				{
 					Reference = (byte) MainMenuButtons.Exit,
 					ButtonText = "Exit",
 					Selected = false,
-					Collider = Rectangle.Empty
+					Shape = Rectangle.Empty
 				}
 			};
 		}
@@ -526,14 +530,12 @@ namespace BlueMonster.MazeGame
 						int listTop = (PageSize.Height - (buttonHeight * Buttons.Length) - ((Buttons.Length - 1) * 15)) / 2;
 						for (int i = 0; i < Buttons.Length; i++)
 						{
-							Buttons[i].Collider = new Rectangle(10, listTop + (buttonHeight * i) + (15 * i), buttonWidth, buttonHeight);
-							DrawButton(g, PageStyle.ButtonFont,
-								Buttons[i].Selected ? PageStyle.HighlightedColor : PageStyle.FeatureColor,
-								PageStyle.TextColor, PageStyle.BorderColor, Buttons[i].ButtonText, ref Buttons[i].Collider);
+							Buttons[i].Shape = new Rectangle(10, listTop + (buttonHeight * i) + (15 * i), buttonWidth, buttonHeight);
+							DrawButton(g, PageStyle.ButtonFont, ref Buttons[i], Buttons[i].Selected ? PageStyle.HighlightedColor : PageStyle.FeatureColor, PageStyle.TextColor, PageStyle.BorderColor);
 						}
 						Rectangle btnSize = Rectangle.FromLTRB((PageSize.Width / 4) + 22, 12,
 							PageSize.Width - 12, 12 + g.MeasureString(Parent.title, PageStyle.TitleFont).ToSize().Height);
-						DrawButton(g, PageStyle.TitleFont, PageStyle.BGColor, Brushes.White, Pens.Transparent, Parent.title, ref btnSize);
+						DrawText(g, PageStyle.TitleFont, Parent.title, btnSize, PageStyle.TextColor);
 					}
 					break;
 				default:
@@ -566,6 +568,8 @@ namespace BlueMonster.MazeGame
 	}
 
 	#endregion
+
+	#region Page - Maze Creator
 
 	internal class PageMazeCreator : FormPage
 	{
@@ -616,13 +620,15 @@ namespace BlueMonster.MazeGame
 		}
 	}
 
+	#endregion
+
 	#region Game Button Struct
 	public struct GameButton
 	{
 		public byte Reference;
 		public string ButtonText;
 		public bool Selected;
-		public Rectangle Collider;
+		public Rectangle Shape;
 	}
 	#endregion
 
